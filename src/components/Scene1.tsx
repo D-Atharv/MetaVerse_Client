@@ -9,13 +9,19 @@ class Scene1 extends Phaser.Scene {
     preload() {
         // Load the background image with a key
         this.load.image("background", background);
-        this.load.image("ship",ship)
+        this.load.image("ship", ship)
     }
     create() {
+
+        //TODO change to here later for showing the loading screen first
+
+        // this.add.text(20, 20, "Loading game...");
+        // this.time.delayedCall(1000, () => {
+        //     this.scene.start("playGame");
+        // })
+
         this.add.text(20, 20, "Loading game...");
-        this.time.delayedCall(1000, () => {
-            this.scene.start("playGame");
-        })
+        this.scene.start("playGame");
     }
 }
 
