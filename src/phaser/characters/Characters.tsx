@@ -1,46 +1,34 @@
-interface Boundaries {
-  left: number;
-  right: number;
-  top: number;
-  bottom: number;
-}
+export default class Ship extends Phaser.Physics.Arcade.Sprite {
+    private speed: number;// Encapsulate speed as a property
 
-export default class Ship extends Phaser.GameObjects.Image {
-  private speed: number; // Encapsulate speed as a property
+    constructor(
+        scene: Phaser.Scene,
+        x: number,
+        y: number,
+        texture: string,
+        speed: number
+    ) {
+        super(scene, x, y, texture);
+        scene.add.existing(this); // Add the ship to the scene
+        scene.physics.add.existing(this); // Enable physics for the ship
 
-  constructor(
-    scene: Phaser.Scene,
-    x: number,
-    y: number,
-    texture: string,
-    speed: number
-  ) {
-    super(scene, x, y, texture);
-    scene.add.existing(this); // Add the ship to the scene
-    this.speed = speed; // Initialize speed
-  }
+        this.speed = speed; // Initialize speed
+        this.setCollideWorldBounds(true); // Prevent the ship from leaving the world
+    }
 
-  // Set the scale of the ship
-  public setShipScale(scale: number): void {
-    this.setScale(scale);
-  }
+    public move(cursors: Phaser.Types.Input.Keyboard.CursorKeys): void {
+        this.setVelocity(0); // Reset velocity before applying input
 
-  // Move the ship based on cursor input and enforce boundaries
-  public move(
-    cursors: Phaser.Types.Input.Keyboard.CursorKeys,
-    boundaries: Boundaries
-  ): void {
-    if (cursors.left?.isDown && this.x > boundaries.left) {
-      this.x -= this.speed; 
+        if (cursors.left?.isDown) {
+            this.setVelocityX(-this.speed);
+        } else if (cursors.right?.isDown) {
+            this.setVelocityX(this.speed);
+        }
+
+        if (cursors.up?.isDown) {
+            this.setVelocityY(-this.speed);
+        } else if (cursors.down?.isDown) {
+            this.setVelocityY(this.speed);
+        }
     }
-    if (cursors.right?.isDown && this.x < boundaries.right) {
-      this.x += this.speed; 
-    }
-    if (cursors.up?.isDown && this.y > boundaries.top) {
-      this.y -= this.speed; 
-    }
-    if (cursors.down?.isDown && this.y < boundaries.bottom) {
-      this.y += this.speed; 
-    }
-  }
 }
