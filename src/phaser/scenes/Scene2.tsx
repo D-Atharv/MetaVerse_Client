@@ -1,8 +1,10 @@
 import BaseScene from "./BaseScene";
 import { SHIP_SPEED } from "../utils/constants";
+import { createFloor } from "../floor/Floor";
+import Ship from "../characters/Characters";
 
 export default class Scene2 extends BaseScene {
-    private ship!: Phaser.GameObjects.Image;
+    private ship!: Ship;
     private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
 
     constructor() {
@@ -12,12 +14,12 @@ export default class Scene2 extends BaseScene {
     create() {
 
         // Create floor tiles
-        this.createFloor();
+        createFloor(this, this.scale.width, this.scale.height, "floor", "floorSprite");
 
         const { width, height } = this.scale; // Get dynamic game dimensions
 
         // Add the player ship in the center of the screen
-        this.ship = this.add.image(width / 2, height / 2, "ship").setOrigin(0.5, 0.5);
+        this.ship = new Ship(this, width / 2, height / 2, "ship", SHIP_SPEED);
         this.ship.setScale(3); // Scale the ship to make it larger
         this.ship.setDepth(1); // Ensure ship is above the floor or we called the createFloor() first to make sure the floor is below the ship
 
@@ -31,52 +33,19 @@ export default class Scene2 extends BaseScene {
         this.cursors = this.input.keyboard!.createCursorKeys();
 
     }
-
-    createFloor() {
-        const { width, height } = this.scale;
-
-        // Calculate diagonal length of the screen
-        const diagonal = Math.sqrt(width * width + height * height);
-
-        // Add a tileSprite that covers the screen fully, accounting for rotation
-        const floor = this.add.tileSprite(
-            width / 2, // Center of the screen horizontally
-            height / 2, // Center of the screen vertically
-            diagonal + 20, // Add overlap to eliminate gaps
-            diagonal + 20, // Add overlap to eliminate gaps
-            "floor",
-            "floorSprite" // frame name from floorSprite.json
-        )
-            .setOrigin(0.5, 0.5) // Center origin to align with the screen
-            .setAngle(45); // Rotate the floor by 45 degrees
-
-        // Adjust tile scaling slightly to remove gaps
-        floor.setTileScale(0.81, 0.81); // Adjust this as needed
-        // floor.setTileScale(0.51, 0.51); 
-    }
-
     update() {
         const shipHalfWidth = this.ship.displayWidth / 2;
         const shipHalfHeight = this.ship.displayHeight / 2;
-
-        // Calculate boundaries based on scene dimensions
-        const leftBoundary = 0 + shipHalfWidth;
-        const rightBoundary = this.scale.width - shipHalfWidth;
-        const topBoundary = 0 + shipHalfHeight;
-        const bottomBoundary = this.scale.height - shipHalfHeight;
-
-        // Move the ship based on cursor input and enforce boundaries
-        if (this.cursors.left?.isDown && this.ship.x > leftBoundary) {
-            this.ship.x -= SHIP_SPEED;
-        }
-        if (this.cursors.right?.isDown && this.ship.x < rightBoundary) {
-            this.ship.x += SHIP_SPEED;
-        }
-        if (this.cursors.up?.isDown && this.ship.y > topBoundary) {
-            this.ship.y -= SHIP_SPEED;
-        }
-        if (this.cursors.down?.isDown && this.ship.y < bottomBoundary) {
-            this.ship.y += SHIP_SPEED;
-        }
-    }
+    
+        // Define movement boundaries
+        const boundaries = {
+          left: shipHalfWidth,
+          right: this.scale.width - shipHalfWidth,
+          top: shipHalfHeight,
+          bottom: this.scale.height - shipHalfHeight,
+        };
+    
+        // Move the ship
+        this.ship.move(this.cursors, boundaries);
+      }
 }
