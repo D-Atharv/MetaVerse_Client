@@ -1,7 +1,8 @@
 import BaseScene from "./BaseScene";
-import { SHIP_SPEED } from "../utils/constants";
+import { SHIP_SPEED } from "../../utils/constants";
 import { createFloor } from "../floor/Floor";
 import Ship from "../characters/Characters";
+import { createWalls } from "../walls/Walls";
 
 export default class Scene2 extends BaseScene {
     private ship!: Ship;
@@ -13,10 +14,14 @@ export default class Scene2 extends BaseScene {
 
     create() {
 
+        const { width, height } = this.scale; // Get dynamic game dimensions
+
         // Create floor tiles
         createFloor(this, this.scale.width, this.scale.height, "floor", "floorSprite");
 
-        const { width, height } = this.scale; // Get dynamic game dimensions
+        // Add walls to the edges of the screen with different textures
+        createWalls(this, "verticalWalls", "sideWalls");
+
 
         // Add the player ship in the center of the screen
         this.ship = new Ship(this, width / 2, height / 2, "ship", SHIP_SPEED);
@@ -36,16 +41,16 @@ export default class Scene2 extends BaseScene {
     update() {
         const shipHalfWidth = this.ship.displayWidth / 2;
         const shipHalfHeight = this.ship.displayHeight / 2;
-    
+
         // Define movement boundaries
         const boundaries = {
-          left: shipHalfWidth,
-          right: this.scale.width - shipHalfWidth,
-          top: shipHalfHeight,
-          bottom: this.scale.height - shipHalfHeight,
+            left: shipHalfWidth,
+            right: this.scale.width - shipHalfWidth,
+            top: shipHalfHeight,
+            bottom: this.scale.height - shipHalfHeight,
         };
-    
+
         // Move the ship
         this.ship.move(this.cursors, boundaries);
-      }
+    }
 }

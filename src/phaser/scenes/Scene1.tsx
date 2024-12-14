@@ -14,7 +14,7 @@ export default class Scene1 extends BaseScene {
         this.add.text(20, 20, "Loading game...");
 
         // transition to the main game scene after 500ms
-        this.time.delayedCall(500, () => {
+        this.time.delayedCall(100, () => {
             this.scene.start("playGame");
         });
     }
