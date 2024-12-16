@@ -1,6 +1,7 @@
 import { createWall } from "./createWall";
 import { getWallConfigs } from "../../utils/wallConfig";
 
+//TODO-> create stacked walls
 export function createWalls(
     scene: Phaser.Scene,
     verticalTexture: string,
