@@ -6,7 +6,7 @@ interface ErrorResponse {
     message: string;
 }
 
-const API_BASE_URL = import.meta.env.API_URL;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const login = async (username: string, password: string): Promise<AuthResponse> => {
     const response = await fetch(`${API_BASE_URL}/login`, { 

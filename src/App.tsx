@@ -1,11 +1,12 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router';
-import { AuthProvider } from '../@context/AuthProvider';
-import SignIn from './auth/SignIn';
-import Login from './auth/Login';
-import ProtectedRoute from './auth/ProtectedRoute';
-import Logout from './auth/Logout';
-import Game from './components/Game';
+import React from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router";
+import { AuthProvider } from "../@context/AuthProvider";
+import { SocketProvider } from "../@context/SocketProvider";
+import Login from "./auth/Login";
+import SignIn from "./auth/SignIn";
+import ProtectedRoute from "./auth/ProtectedRoute";
+import Logout from "./auth/Logout";
+import Game from "./components/Game";
 
 export const App: React.FC = () => {
   return (
@@ -19,14 +20,16 @@ export const App: React.FC = () => {
             path="/game"
             element={
               <ProtectedRoute>
-                <Game />
+                <SocketProvider>
+                  <Game />
+                </SocketProvider>
               </ProtectedRoute>
             }
           />
           <Route path="/logout" element={<Logout />} />
         </Routes>
       </Router>
-    </AuthProvider>
+    </AuthProvider >
   );
 };
 
