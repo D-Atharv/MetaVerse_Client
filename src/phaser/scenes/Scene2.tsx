@@ -9,6 +9,7 @@ export default class Scene2 extends BaseScene {
     private ship!: Ship;
     private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
     private walls!: Phaser.Physics.Arcade.StaticGroup;
+    private isConnected: boolean = false;
 
     constructor() {
         super("playGame");
@@ -17,38 +18,46 @@ export default class Scene2 extends BaseScene {
     create() {
         const { width, height } = this.scale;
 
-        // Create floor tiles
+        // Create the floor
         createFloor(this, width, height, "floor", "floorSprite");
 
-        // Create static walls with physics
+        // Create walls with physics
         this.walls = createWalls(this, "verticalWalls", "sideWalls");
 
-        // Create the ship and add physics
+        // Create the ship with physics
         this.ship = new Ship(this, width / 2, height / 2, "ship", SHIP_SPEED);
-        this.ship.setScale(3);// Scale the ship to make it larger
-        this.ship.setDepth(1);// Ensure the ship is above other elements
+        this.ship.setScale(3); // Make the ship larger
+        this.ship.setDepth(1); // Ensure it appears above other elements
 
-        // Enable collisions between the ship and walls
+        // Enable collision between the ship and walls
         this.physics.add.collider(this.ship, this.walls);
 
-        // Enable keyboard input for the ship's movement
+        // Setup keyboard input
         this.cursors = this.input.keyboard!.createCursorKeys();
 
-        // Connect WebSocket
+        // Initialize WebSocket connection
         const wsManager = WebSocketManager.getInstance();
         wsManager.connect(import.meta.env.VITE_WS_URL as string);
+
+        // Listen for WebSocket connection changes
+        wsManager.onConnectionChange((isConnected) => {
+            this.isConnected = isConnected;
+        });
     }
 
     update() {
         if (this.ship && this.cursors) {
-            this.ship.move(this.cursors);// Move the ship based on input
+            // Move the ship based on input
+            this.ship.move(this.cursors);
 
-            // Send ship position over WebSocket
-            const coordinates = { x: this.ship.x, y: this.ship.y };
-            WebSocketManager.getInstance().sendMessage({
-                event: "movement",
-                data: coordinates,
-            });
+            // Send position to the server if WebSocket is connected
+            if (this.isConnected) {
+                const coordinates = { x: this.ship.x, y: this.ship.y };
+                WebSocketManager.getInstance().sendMessage({
+                    event: "movement",
+                    data: coordinates,
+                });
+            }
         }
     }
 }

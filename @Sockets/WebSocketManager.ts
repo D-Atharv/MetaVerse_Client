@@ -1,5 +1,6 @@
 /**
- * WebSocketManager is a singleton class that manages a single WebSocket connection
+ * WebSocketManager is a singleton class that manages a single WebSocket connection,
+ * message queuing, and automatic reconnection.
  */
 class WebSocketManager {
     // Singleton instance of WebSocketManager
@@ -11,8 +12,17 @@ class WebSocketManager {
     // List of listeners for connection status changes
     private connectionListeners: ((isConnected: boolean) => void)[] = [];
 
+    // Queue to store messages when WebSocket is not open
+    private messageQueue: object[] = [];
+
+    // Delay in milliseconds for automatic reconnection attempts
+    private reconnectDelay: number = 3000; // 3 seconds
+
+    // Maximum size of the message queue
+    private maxQueueSize: number = 100;
+
     // Private constructor to prevent direct instantiation
-    private constructor() {}
+    private constructor() { }
 
     /**
      * Returns the singleton instance of WebSocketManager.
@@ -39,12 +49,14 @@ class WebSocketManager {
             this.socket.onopen = () => {
                 console.log("WebSocket connected!");
                 this.notifyConnectionListeners(true); // Notify listeners about connection status
+                this.flushMessageQueue(); // Flush any queued messages
             };
 
             // Handle WebSocket connection close event
             this.socket.onclose = () => {
-                console.log("WebSocket disconnected!");
+                console.log("WebSocket disconnected! Attempting to reconnect...");
                 this.notifyConnectionListeners(false); // Notify listeners about disconnection
+                setTimeout(() => this.connect(url), this.reconnectDelay); // Attempt to reconnect after a delay
             };
 
             // Handle WebSocket errors
@@ -55,13 +67,14 @@ class WebSocketManager {
             // Handle incoming messages from the WebSocket server
             this.socket.onmessage = (event) => {
                 console.log("Message from server:", event.data);
-                // You can add additional logic here to handle specific events
+                // Additional logic for handling messages can be added here
             };
         }
     }
 
     /**
      * Sends a message to the WebSocket server.
+     * If the WebSocket is not open, the message is queued for later delivery.
      * @param message - An object containing the message to be sent
      */
     public sendMessage(message: object): void {
@@ -69,16 +82,27 @@ class WebSocketManager {
         if (this.socket && this.socket.readyState === WebSocket.OPEN) {
             this.socket.send(JSON.stringify(message)); // Convert the message to JSON format
         } else {
-            console.error("WebSocket is not open. Cannot send message.");
+            // If the queue exceeds the maximum size, remove the oldest message
+            if (this.messageQueue.length >= this.maxQueueSize) {
+                console.warn("Message queue is full. Dropping the oldest message.");
+                this.messageQueue.shift(); // Remove the oldest message
+            }
+            console.error("WebSocket is not open. Queueing message.");
+            this.messageQueue.push(message); // Add the message to the queue
         }
     }
 
     /**
-     * Closes the WebSocket connection if it exists.
+     * Sends all queued messages when the WebSocket connection is established.
+     * This method is called internally when the WebSocket is open.
      */
-    public close(): void {
-        if (this.socket) {
-            this.socket.close(); // Close the connection
+    private flushMessageQueue(): void {
+        // Process all messages in the queue
+        while (this.messageQueue.length > 0) {
+            const message = this.messageQueue.shift(); // Get the oldest message
+            if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+                this.socket.send(JSON.stringify(message)); // Send the message to the server
+            }
         }
     }
 
