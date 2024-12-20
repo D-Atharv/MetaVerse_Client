@@ -1,7 +1,6 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router";
 import { AuthProvider } from "../@context/AuthProvider";
-import { SocketProvider } from "../@context/SocketProvider";
 import Login from "./auth/Login";
 import SignIn from "./auth/SignIn";
 import ProtectedRoute from "./auth/ProtectedRoute";
@@ -20,9 +19,7 @@ export const App: React.FC = () => {
             path="/game"
             element={
               <ProtectedRoute>
-                <SocketProvider>
-                  <Game />
-                </SocketProvider>
+                <Game />
               </ProtectedRoute>
             }
           />

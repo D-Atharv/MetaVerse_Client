@@ -1,22 +1,22 @@
-import Phaser from "phaser";
+import { useEffect, useState } from "react";
+import WebSocketManager from "../../@Sockets/WebSocketManager";
 import Scene1 from "../phaser/scenes/Scene1";
 import Scene2 from "../phaser/scenes/Scene2";
-import { useEffect } from "react";
-import { useSocket } from "../../@hooks/useSocket";
 
 //TODO -> added console.log and useEffect for debugging purposes. Remove them later
 
 const Game = () => {
-    const { sendMessage, isConnected } = useSocket();
+    const [isConnected, setIsConnected] = useState(false);
 
     useEffect(() => {
-        if (isConnected) {
-            console.log("Sending test message...");
-            sendMessage("Hello from Client!");
-        }
-    }, [isConnected, sendMessage]);
+        // Monitor WebSocket connection status
+        const wsManager = WebSocketManager.getInstance();
+        wsManager.onConnectionChange(setIsConnected);
+        wsManager.onConnectionChange((isConnected) => {
+            console.log("Connection Status:", isConnected);
+        });
 
-    useEffect(() => {
+        // Initialize Phaser Game
         const config: Phaser.Types.Core.GameConfig = {
             type: Phaser.AUTO, // Automatically choose WebGL or Canvas renderer
             width: window.innerWidth, // Use full window width
