@@ -1,3 +1,4 @@
+import Phaser from "phaser";
 import BaseScene from "./BaseScene";
 import { createFloor } from "../floor/Floor";
 import { createWalls } from "../walls/Walls";
@@ -13,6 +14,10 @@ export default class Scene2 extends BaseScene {
     private otherShips: { [userID: string]: Ship } = {};
     private isConnected: boolean = false;
     private userID: string | null = null;
+
+    private lastSentPosition: { x: number; y: number } | null = null;
+    private lastSentTime: number = 0;
+    private throttleDelay: number = 100; // Throttle delay in ms
 
     constructor() {
         super("playGame");
@@ -68,7 +73,7 @@ export default class Scene2 extends BaseScene {
         // Listen for incoming WebSocket messages
         wsManager.onMessage((message: WebSocketEvent) => {
             if (message.event === "positions") {
-                console.log("Incoming positions data:", message.positions); //TODO-> remove later
+                console.log("Incoming positions data:", message.positions); // TODO: remove later
                 if (!message.positions || !Array.isArray(message.positions)) {
                     console.error("Invalid positions data received:", message.positions);
                     return;
@@ -84,17 +89,37 @@ export default class Scene2 extends BaseScene {
             this.ship.move(this.cursors);
 
             if (this.isConnected) {
-                const coordinates = { x: this.ship.x, y: this.ship.y };
-                WebSocketManager.getInstance().sendMessage({
-                    event: "movement",
-                    data: {
-                        user_id: this.userID!,
-                        ...coordinates,
-                    },
-                });
+                const currentPosition = { x: this.ship.x, y: this.ship.y };
+                const currentTime = Date.now();
+
+                // Check if the position has changed
+                const hasPositionChanged =
+                    !this.lastSentPosition ||
+                    this.lastSentPosition.x !== currentPosition.x ||
+                    this.lastSentPosition.y !== currentPosition.y;
+
+                // Check if enough time has passed (throttling)
+                const isThrottled = currentTime - this.lastSentTime < this.throttleDelay;
+
+                if (hasPositionChanged && !isThrottled) {
+                    WebSocketManager.getInstance().sendMessage({
+                        event: "movement",
+                        data: {
+                            user_id: this.userID!,
+                            ...currentPosition,
+                        },
+                    });
+
+                    // Update the last sent position and time
+                    this.lastSentPosition = currentPosition;
+                    this.lastSentTime = currentTime;
+
+                    console.log("Movement sent:", currentPosition);
+                }
             }
         }
     }
+
     private updateOtherShips(positions: { userID: string; x: number; y: number }[]) {
         positions.forEach(({ userID, x, y }) => {
             if (userID !== this.userID) { // Skip the current user's ship
@@ -111,6 +136,4 @@ export default class Scene2 extends BaseScene {
             }
         });
     }
-
-
 }
