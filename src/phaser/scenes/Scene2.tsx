@@ -60,28 +60,40 @@ export default class Scene2 extends BaseScene {
         wsManager.onConnectionChange((isConnected) => {
             this.isConnected = isConnected;
 
-            if (isConnected) {
-                if (this.userID !== null) {
-                    wsManager.sendMessage({
-                        event: "register",
-                        data: { user_id: this.userID },
-                    });
-                }
+            if (isConnected && this.userID !== null) {
+                wsManager.sendMessage({
+                    event: "register",
+                    data: { user_id: this.userID },
+                });
             }
         });
 
         // Listen for incoming WebSocket messages
         wsManager.onMessage((message: WebSocketEvent) => {
             if (message.event === "positions") {
-                console.log("Incoming positions data:", message.positions); // TODO: remove later
+                console.log("Incoming positions data:", message.positions);
                 if (!message.positions || !Array.isArray(message.positions)) {
                     console.error("Invalid positions data received:", message.positions);
                     return;
                 }
-                this.updateOtherShips(message.positions);
+
+                // Normalize and process positions
+                const normalizedPositions = message.positions.map((position) => {
+                    if (!position.user_id) {
+                        console.error("Position data missing user_id:", position);
+                        return { userID: undefined, x: 0, y: 0 };
+                    }
+
+                    return {
+                        userID: position.user_id,
+                        x: position.x || 0,
+                        y: position.y || 0,
+                    };
+                });
+
+                this.updateOtherShips(normalizedPositions);
             }
         });
-
     }
 
     update() {
@@ -92,13 +104,11 @@ export default class Scene2 extends BaseScene {
                 const currentPosition = { x: this.ship.x, y: this.ship.y };
                 const currentTime = Date.now();
 
-                // Check if the position has changed
                 const hasPositionChanged =
                     !this.lastSentPosition ||
                     this.lastSentPosition.x !== currentPosition.x ||
                     this.lastSentPosition.y !== currentPosition.y;
 
-                // Check if enough time has passed (throttling)
                 const isThrottled = currentTime - this.lastSentTime < this.throttleDelay;
 
                 if (hasPositionChanged && !isThrottled) {
@@ -110,7 +120,6 @@ export default class Scene2 extends BaseScene {
                         },
                     });
 
-                    // Update the last sent position and time
                     this.lastSentPosition = currentPosition;
                     this.lastSentTime = currentTime;
 
@@ -120,19 +129,35 @@ export default class Scene2 extends BaseScene {
         }
     }
 
-    private updateOtherShips(positions: { userID: string; x: number; y: number }[]) {
+    private updateOtherShips(positions: { userID: string | undefined; x: number; y: number }[]) {
+        const activeUserIDs: string[] = [];
+
         positions.forEach(({ userID, x, y }) => {
-            if (userID !== this.userID) { // Skip the current user's ship
+            if (!userID) {
+                console.error("Invalid userID detected in positions:", { userID, x, y });
+                return;
+            }
+
+            activeUserIDs.push(userID);
+
+            if (userID !== this.userID) {
                 if (!this.otherShips[userID]) {
-                    // Create a new ship for this user if it doesn't exist
+                    console.log(`Creating new ship for user: ${userID}`);
                     this.otherShips[userID] = new Ship(this, x, y, "ship", SHIP_SPEED);
                     this.otherShips[userID].setScale(3);
                     this.otherShips[userID].setDepth(1);
                     this.physics.add.collider(this.otherShips[userID], this.walls);
                 } else {
-                    // Update position of the existing ship
                     this.otherShips[userID].setPosition(x, y);
                 }
+            }
+        });
+
+        Object.keys(this.otherShips).forEach((userID) => {
+            if (!activeUserIDs.includes(userID)) {
+                console.log(`Removing ship for disconnected user: ${userID}`);
+                this.otherShips[userID].destroy();
+                delete this.otherShips[userID];
             }
         });
     }
