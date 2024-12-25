@@ -92,6 +92,13 @@ export default class Scene2 extends BaseScene {
                 });
 
                 this.updateOtherShips(normalizedPositions);
+            } else if (message.event === "proximity_alert") {
+                this.showProximityAlert(message.alerts);
+            }
+            else if (message.event === "disconnect") {
+                this.handleDisconnect(message.data.user_id);
+            } else {
+                console.error("Unknown WebSocket event:", message.event);
             }
         });
     }
@@ -161,4 +168,43 @@ export default class Scene2 extends BaseScene {
             }
         });
     }
+
+    private showProximityAlert(alerts: string[]) {
+        const invalidAlerts: string[] = [];
+        alerts.forEach((userID) => {
+            const otherShip = this.otherShips[userID];
+            if (!otherShip) {
+                console.error(`Proximity alert for unknown user: ${userID}`);
+                invalidAlerts.push(userID);
+                return;
+            }
+
+            const dx = this.ship.x - otherShip.x;
+            const dy = this.ship.y - otherShip.y;
+            const distanceSquared = dx * dx + dy * dy;
+
+            if (distanceSquared > 2500) { // Assuming ProximityThreshold = 50
+                console.warn(`Invalid proximity alert: ${userID} is no longer nearby.`);
+                invalidAlerts.push(userID);
+                return;
+            }
+
+            console.log(`Proximity alert: You are near user ${userID}`);
+        });
+
+        if (invalidAlerts.length > 0) {
+            console.warn(`Invalid proximity alerts detected for users: ${invalidAlerts.join(", ")}`);
+        }
+    }
+
+    private handleDisconnect(userID: string) {
+        if (this.otherShips[userID]) {
+            console.log(`Removing ship for disconnected user: ${userID}`);
+            this.otherShips[userID].destroy();
+            delete this.otherShips[userID];
+        } else {
+            console.warn(`Attempted to remove non-existent user: ${userID}`);
+        }
+    }
+
 }

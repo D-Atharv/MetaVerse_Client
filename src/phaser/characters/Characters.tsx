@@ -1,6 +1,6 @@
 export default class Ship extends Phaser.Physics.Arcade.Sprite {
     private speed: number;// Encapsulate speed as a property
-
+    //TODO -> add two characters as actual object with colliding properties
     constructor(
         scene: Phaser.Scene,
         x: number,

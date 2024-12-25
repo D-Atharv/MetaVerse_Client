@@ -1,7 +1,9 @@
 export type WebSocketEvent =
     | { event: "register"; data: { user_id: string } }
     | { event: "movement"; data: { user_id: string; x: number; y: number } }
-    | { event: "positions"; positions: { user_id: string; x: number; y: number }[] };
+    | { event: "positions"; positions: { user_id: string; x: number; y: number }[] }
+    | { event: "proximity_alert"; alerts: string[] }
+    | { event: "disconnect"; data: { user_id: string } };
 
 export interface WebSocketMessage {
     event: string;
