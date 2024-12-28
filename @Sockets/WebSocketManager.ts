@@ -3,7 +3,8 @@ export type WebSocketEvent =
     | { event: "movement"; data: { user_id: string; x: number; y: number } }
     | { event: "positions"; positions: { user_id: string; x: number; y: number }[] }
     | { event: "proximity_alert"; alerts: string[] }
-    | { event: "disconnect"; data: { user_id: string } };
+    | { event: "disconnect"; data: { user_id: string } }
+    | { event: "video_call_prompt"; data: { from: string; to: string } }; 
 
 export interface WebSocketMessage {
     event: string;
